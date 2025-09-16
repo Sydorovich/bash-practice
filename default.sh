@@ -25,7 +25,6 @@ WORKFLOWS=(
 )
 
 CHECKPOINT_MODELS=(
-    "https://civitai.com/api/download/models/1896532?type=Model&format=SafeTensor&size=pruned&fp=fp16"
     "https://civitai.com/api/download/models/2167369?type=Model&format=SafeTensor&size=pruned&fp=fp16"
 )
 
@@ -174,18 +173,23 @@ function provisioning_has_valid_civitai_token() {
 
 # Download from $1 URL to $2 file path
 function provisioning_download() {
+    local auth_token=""
     if [[ -n $HF_TOKEN && $1 =~ ^https://([a-zA-Z0-9_-]+\.)?huggingface\.co(/|$|\?) ]]; then
         auth_token="$HF_TOKEN"
-    elif 
-        [[ -n $CIVITAI_TOKEN && $1 =~ ^https://([a-zA-Z0-9_-]+\.)?civitai\.com(/|$|\?) ]]; then
+    elif [[ -n $CIVITAI_TOKEN && $1 =~ ^https://([a-zA-Z0-9_-]+\.)?civitai\.com(/|$|\?) ]]; then
         auth_token="$CIVITAI_TOKEN"
     fi
-    if [[ -n $auth_token ]];then
-        wget --header="Authorization: Bearer $auth_token" -qnc --content-disposition --show-progress -e dotbytes="${3:-4M}" -P "$2" "$1"
+
+    if [[ -n $auth_token ]]; then
+        wget --header="Authorization: Bearer $auth_token" \
+             --content-disposition --trust-server-names --show-progress \
+             -e dotbytes="${3:-4M}" -P "$2" "$1"
     else
-        wget -qnc --content-disposition --show-progress -e dotbytes="${3:-4M}" -P "$2" "$1"
+        wget --content-disposition --trust-server-names --show-progress \
+             -e dotbytes="${3:-4M}" -P "$2" "$1"
     fi
 }
+
 
 # Allow user to disable provisioning if they started with a script they didn't want
 if [[ ! -f /.noprovisioning ]]; then
